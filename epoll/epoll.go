@@ -94,7 +94,12 @@ retry:
 	var connections []net.Conn
 	for i := range n {
 		conn := e.connections[int(events[i].Fd)]
-		connections = append(connections, conn)
+
+		if conn != nil {
+			connections = append(connections, conn)
+		} else {
+			delete(e.connections, int(events[i].Fd))
+		}
 	}
 	return connections, nil
 }
