@@ -3,7 +3,6 @@ package epoll
 import (
 	"log"
 	"net"
-	"reflect"
 	"sync"
 	"syscall"
 
@@ -30,9 +29,12 @@ func New() (*Epoll, error) {
 }
 
 func (e *Epoll) Add(conn net.Conn) error {
-	fd := getFD(conn)
+	fd, err := getFD(conn)
+	if err != nil {
+		return err
+	}
 
-	err := unix.EpollCtl(
+	err = unix.EpollCtl(
 		e.fd,
 		syscall.EPOLL_CTL_ADD,
 		fd,
@@ -55,9 +57,12 @@ func (e *Epoll) Add(conn net.Conn) error {
 }
 
 func (e *Epoll) Remove(conn net.Conn) error {
-	fd := getFD(conn)
+	fd, err := getFD(conn)
+	if err != nil {
+		return err
+	}
 
-	err := unix.EpollCtl(e.fd, syscall.EPOLL_CTL_DEL, fd, nil)
+	err = unix.EpollCtl(e.fd, syscall.EPOLL_CTL_DEL, fd, nil)
 	if err != nil {
 		return err
 	}
@@ -94,7 +99,11 @@ retry:
 	return connections, nil
 }
 
-func getFD(conn net.Conn) int {
-	fd := reflect.Indirect(reflect.Indirect(reflect.ValueOf(conn)).FieldByName("conn").FieldByName("fd")).FieldByName("pfd")
-	return int(fd.FieldByName("Sysfd").Int())
+func getFD(conn net.Conn) (int, error) {
+	file, err := conn.(*net.TCPConn).File()
+	if err != nil {
+		return -1, err
+	}
+
+	return int(file.Fd()), nil
 }
