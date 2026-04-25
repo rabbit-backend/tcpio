@@ -1,6 +1,8 @@
 package tcpio
 
-import "github.com/rabbit-backend/tcpio/epoll"
+import (
+	"github.com/rabbit-backend/tcpio/epoll"
+)
 
 func (l *Listener) Start() {
 	go l.eventLoop(l.epoller)
@@ -29,12 +31,15 @@ func (l *Listener) eventLoop(epoller *epoll.Epoll) {
 
 		for _, conn := range connections {
 			if err := l.onConnEvent(conn); err != nil {
+				if conn != nil {
+					conn.Close()
+				}
+
 				if err := epoller.Remove(conn); err != nil {
 					l.onErrorEvent(err)
 					continue
 				}
 
-				conn.Close()
 				l.onErrorEvent(err)
 			}
 		}

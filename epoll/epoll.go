@@ -13,9 +13,10 @@ type Epoll struct {
 	fd          int
 	connections map[int]net.Conn
 	lock        *sync.RWMutex
+	events      uint32
 }
 
-func New() (*Epoll, error) {
+func New(events uint32) (*Epoll, error) {
 	fd, err := unix.EpollCreate1(0)
 	if err != nil {
 		return nil, err
@@ -25,6 +26,7 @@ func New() (*Epoll, error) {
 		fd:          fd,
 		connections: make(map[int]net.Conn),
 		lock:        &sync.RWMutex{},
+		events:      events,
 	}, nil
 }
 
@@ -40,7 +42,7 @@ func (e *Epoll) Add(conn net.Conn) error {
 		fd,
 		&unix.EpollEvent{
 			Fd:     int32(fd),
-			Events: unix.POLLIN | unix.POLLHUP,
+			Events: e.events,
 		},
 	)
 

@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/rabbit-backend/tcpio/epoll"
+	"golang.org/x/sys/unix"
 )
 
 type Listener struct {
@@ -25,7 +26,7 @@ func Listen(options *ListenerOptions) (*Listener, error) {
 		return nil, err
 	}
 
-	epoller, err := epoll.New()
+	epoller, err := epoll.New(unix.POLLIN | unix.POLLHUP)
 	if err != nil {
 		return nil, err
 	}
